@@ -3,10 +3,10 @@ import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { startSubscriptionAction } from "@/lib/actions/subscriptions";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServerComponentClient } from "@/lib/supabase/server";
 
 export default async function CreatorPublicPage({ params }: { params: { slug: string } }) {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseServerComponentClient();
   const { data: creator } = await supabase
     .from("creators")
     .select("id, display_name, bio, monthly_price_cents")

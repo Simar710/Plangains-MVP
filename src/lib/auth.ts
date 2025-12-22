@@ -2,10 +2,10 @@ import { redirect } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 
 import type { Creator, Profile } from "@/db/types";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServerComponentClient } from "@/lib/supabase/server";
 
 export async function getSession(): Promise<Session | null> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseServerComponentClient();
   const {
     data: { session }
   } = await supabase.auth.getSession();
@@ -13,7 +13,7 @@ export async function getSession(): Promise<Session | null> {
 }
 
 export async function getProfile(): Promise<Profile | null> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseServerComponentClient();
   const session = await getSession();
   if (!session) return null;
 
@@ -27,7 +27,7 @@ export async function getProfile(): Promise<Profile | null> {
 }
 
 export async function getCreatorProfile(): Promise<Creator | null> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseServerComponentClient();
   const session = await getSession();
   if (!session) return null;
 

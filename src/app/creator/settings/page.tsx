@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createStripeConnectLinkAction } from "@/lib/actions/creator";
 import { getCreatorProfile } from "@/lib/auth";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServerComponentClient } from "@/lib/supabase/server";
 
 export default async function CreatorSettingsPage() {
   const creator = await getCreatorProfile();
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseServerComponentClient();
 
   const { data: program } = await supabase
     .from("programs")

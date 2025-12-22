@@ -4,10 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/lib/auth";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServerComponentClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseServerComponentClient();
   const session = await getSession();
   const { data: profile } = await supabase
     .from("profiles")
