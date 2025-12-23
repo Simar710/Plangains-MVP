@@ -1,7 +1,6 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
 
 import { signInSchema, signUpSchema } from "@/lib/validation/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -71,5 +70,5 @@ export async function signUpAction(_: unknown, formData: FormData) {
 export async function signOutAction() {
   const supabase = getSupabaseServerClient();
   await supabase.auth.signOut();
-  redirect("/");
+  redirect("/auth/sign-in");
 }

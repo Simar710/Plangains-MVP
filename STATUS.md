@@ -13,6 +13,8 @@
 - Supabase schema + RLS policies via migration in supabase/migrations/0001_init.sql
 - Centralized Supabase helpers in src/lib
 - .env.example present with required vars
+- Auth redirect flow now sends unauthenticated users to `/auth/sign-in` (with `next` passthrough) for protected routes and sign-out lands on `/auth/sign-in`
+- ESLint tuned for MVP: `_`-prefixed unused vars allowed; Supabase helpers permit `any` to keep strict elsewhere; unused imports cleaned
 
 ## Partially Done (🟡)
 - Supabase client typings are intentionally loosened to avoid type errors (TODO: generate and wire real Supabase types)
@@ -24,8 +26,8 @@
 
 ## Breaking Issues / TODOs
 - TODO: regenerate Supabase types so TS can type-check queries without `any`
-- `pnpm dev` not re-run in this session after fixes; verify locally
 - Stripe flows require real keys and webhook secret to validate end-to-end
+- Re-run `pnpm dev` after pulling updates to confirm middleware behavior and auth redirects
 
 ## Run Instructions
 1) Install deps: `pnpm install`

@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 
 import { logWorkoutSchema } from "@/lib/validation/workouts";
 import { getSupabaseServerClient } from "@/lib/supabase/server";

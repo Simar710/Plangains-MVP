@@ -31,7 +31,12 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const needsAuth = protectedPaths.some((p) => path === p || path.startsWith(`${p}/`));
   if (needsAuth && !session) {
-    return NextResponse.redirect(new URL("/auth/sign-in", request.url));
+    const redirectUrl = new URL("/auth/sign-in", request.url);
+    const nextParam = `${path}${request.nextUrl.search}`;
+    if (nextParam && nextParam !== "/") {
+      redirectUrl.searchParams.set("next", nextParam);
+    }
+    return NextResponse.redirect(redirectUrl);
   }
 
   if (session) {
