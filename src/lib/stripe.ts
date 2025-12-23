@@ -8,7 +8,7 @@ export function getStripeClient() {
     if (!secret) {
       throw new Error("STRIPE_SECRET_KEY is not configured");
     }
-    stripeClient = new Stripe(secret, { apiVersion: "2024-11-20" });
+    stripeClient = new Stripe(secret, { apiVersion: "2023-10-16" });
   }
   return stripeClient;
 }

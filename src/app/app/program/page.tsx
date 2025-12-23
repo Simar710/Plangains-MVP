@@ -49,18 +49,21 @@ export default async function ProgramPage() {
     .maybeSingle();
 
   const selectedDay = program?.program_days?.[0];
+  const creator = (subscription && Array.isArray(subscription.creators)
+    ? subscription.creators[0]
+    : subscription?.creators) as { display_name?: string; slug?: string } | null;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
         <p className="text-sm text-muted-foreground">Subscribed to</p>
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-semibold">{subscription.creators?.display_name}</h1>
+          <h1 className="text-3xl font-semibold">{creator?.display_name}</h1>
           <Badge variant="secondary" className="capitalize">
             {subscription.status}
           </Badge>
         </div>
-        <Link href={`/creator/${subscription.creators?.slug}`} className="text-sm">
+        <Link href={`/creator/${creator?.slug}`} className="text-sm">
           View public page
         </Link>
       </div>

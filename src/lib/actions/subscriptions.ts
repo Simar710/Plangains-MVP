@@ -5,9 +5,11 @@ import { redirect } from "next/navigation";
 import { siteUrl, platformFeePercent, getStripeClient } from "@/lib/stripe";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-export async function startSubscriptionAction(_: unknown, formData: FormData) {
+export async function startSubscriptionAction(formData: FormData) {
   const creatorId = formData.get("creatorId")?.toString();
-  if (!creatorId) return { error: "Missing creator" };
+  if (!creatorId) {
+    redirect("/creator");
+  }
 
   const supabase = getSupabaseServerClient();
   const {
@@ -24,7 +26,9 @@ export async function startSubscriptionAction(_: unknown, formData: FormData) {
     .eq("id", creatorId)
     .single();
 
-  if (!creator) return { error: "Creator not found" };
+  if (!creator) {
+    redirect("/creator");
+  }
 
   if (creator.monthly_price_cents === 0) {
     await supabase
@@ -42,7 +46,7 @@ export async function startSubscriptionAction(_: unknown, formData: FormData) {
   }
 
   if (!process.env.STRIPE_SECRET_KEY) {
-    return { error: "Stripe is not configured" };
+    redirect(`/creator/${creator.slug}?error=stripe_not_configured`);
   }
 
   const stripe = getStripeClient();

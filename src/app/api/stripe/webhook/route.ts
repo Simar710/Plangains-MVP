@@ -19,7 +19,8 @@ type SubscriptionStatus =
   | "incomplete_expired"
   | "past_due"
   | "canceled"
-  | "unpaid";
+  | "unpaid"
+  | "paused";
 
 async function upsertSubscription(params: {
   memberId: string;

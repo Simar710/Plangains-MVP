@@ -116,14 +116,16 @@ export async function createProgramAction(_: unknown, formData: FormData) {
 
   if (error) return { error: error.message };
 
-  for (const [dayIndex, day] of parsed.data.days.entries()) {
+  for (let dayIndex = 0; dayIndex < parsed.data.days.length; dayIndex += 1) {
+    const day = parsed.data.days[dayIndex];
     const { data: dayRow } = await supabase
       .from("program_days")
       .insert({ program_id: program.id, day_number: dayIndex + 1, title: day.title ?? null })
       .select("id")
       .single();
 
-    for (const [position, exercise] of day.exercises.entries()) {
+    for (let position = 0; position < day.exercises.length; position += 1) {
+      const exercise = day.exercises[position];
       await supabase.from("program_exercises").insert({
         program_day_id: dayRow?.id,
         name: exercise.name,
@@ -137,12 +139,14 @@ export async function createProgramAction(_: unknown, formData: FormData) {
   return { error: "" };
 }
 
-export async function createStripeConnectLinkAction() {
+export async function createStripeConnectLinkAction(_: FormData) {
   const supabase = getSupabaseServerClient();
   const {
     data: { session }
   } = await supabase.auth.getSession();
-  if (!session) return { error: "Auth required" };
+  if (!session) {
+    redirect("/auth/sign-in");
+  }
 
   const { data: creator } = await supabase
     .from("creators")
@@ -150,7 +154,9 @@ export async function createStripeConnectLinkAction() {
     .eq("user_id", session.user.id)
     .single();
 
-  if (!creator) return { error: "Create a creator profile first" };
+  if (!creator) {
+    redirect("/creator/become");
+  }
 
   const stripe = getStripeClient();
   let accountId = creator.stripe_account_id;
