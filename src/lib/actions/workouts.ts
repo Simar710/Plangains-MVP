@@ -23,12 +23,17 @@ export async function logWorkoutAction(_: unknown, formData: FormData) {
   const supabase = getSupabaseServerClient();
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("id, member_id")
+    .select("id, member_id, status")
     .eq("id", parsed.data.subscriptionId)
     .single();
 
   if (!subscription) {
     return { error: "Subscription not found" };
+  }
+
+  const allowedStatuses = new Set(["active", "trialing", "free"]);
+  if (!allowedStatuses.has(subscription.status)) {
+    return { error: "Subscription inactive" };
   }
 
   const { data: workout, error: workoutError } = await supabase

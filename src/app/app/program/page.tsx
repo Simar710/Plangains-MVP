@@ -10,11 +10,13 @@ import { getSupabaseServerComponentClient } from "@/lib/supabase/server";
 export default async function ProgramPage() {
   const supabase = getSupabaseServerComponentClient();
   const session = await getSession();
+  if (!session) return null;
+  const allowedStatuses = new Set(["active", "trialing", "free"]);
 
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select("id, creator_id, status, creators(display_name, slug)")
-    .eq("member_id", session?.user.id ?? "")
+    .eq("member_id", session.user.id)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -31,6 +33,27 @@ export default async function ProgramPage() {
           <CardContent>
             <Button asChild>
               <Link href="/creator">Find a creator</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!allowedStatuses.has(subscription.status)) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-3xl font-semibold">My program</h1>
+        <Card>
+          <CardHeader>
+            <CardTitle>Subscription inactive</CardTitle>
+            <CardDescription>
+              Your subscription is {subscription.status}. Renew to regain access.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/creator">Browse creators</Link>
             </Button>
           </CardContent>
         </Card>

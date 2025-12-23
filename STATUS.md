@@ -10,6 +10,8 @@
 - Stripe Connect onboarding link creation (Standard)
 - Stripe Checkout subscription session creation
 - Stripe webhook route with signature verification and subscription upsert
+- Stripe debug logging switch via `DEBUG_STRIPE`
+- Stripe local testing guide at `docs/STRIPE_TESTING.md`
 - Supabase schema + RLS policies via migration in supabase/migrations/0001_init.sql
 - Centralized Supabase helpers in src/lib
 - .env.example present with required vars
@@ -28,6 +30,9 @@
 - TODO: regenerate Supabase types so TS can type-check queries without `any`
 - Stripe flows require real keys and webhook secret to validate end-to-end
 - Re-run `pnpm dev` after pulling updates to confirm middleware behavior and auth redirects
+- Stripe e2e tested locally: yes
+- Validated: Stripe CLI forwarding, Checkout flow, webhook sync for active/trialing/canceled/paused/unpaid/free, DB status updates, access gating for inactive statuses
+- Remaining: none for Stripe e2e testing
 
 ## Run Instructions
 1) Install deps: `pnpm install`
@@ -45,6 +50,7 @@
 - STRIPE_PLATFORM_FEE_PERCENT
 - STRIPE_CONNECT_REFRESH_URL
 - STRIPE_CONNECT_RETURN_URL
+- DEBUG_STRIPE
 
 ## Supabase Migrations
 - `supabase/migrations/0001_init.sql`

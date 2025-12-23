@@ -12,6 +12,19 @@ const relevantEvents = new Set([
   "customer.subscription.deleted"
 ]);
 
+function stripeDebugEnabled() {
+  return process.env.DEBUG_STRIPE === "true";
+}
+
+function logStripeEvent(message: string, payload?: Record<string, unknown>) {
+  if (!stripeDebugEnabled()) return;
+  if (payload) {
+    console.log(`[stripe] ${message}`, payload);
+  } else {
+    console.log(`[stripe] ${message}`);
+  }
+}
+
 type SubscriptionStatus =
   | "trialing"
   | "active"
@@ -21,6 +34,13 @@ type SubscriptionStatus =
   | "canceled"
   | "unpaid"
   | "paused";
+
+function normalizeSubscriptionStatus(subscription: Stripe.Subscription): SubscriptionStatus {
+  if (subscription.pause_collection) {
+    return "paused";
+  }
+  return subscription.status as SubscriptionStatus;
+}
 
 async function upsertSubscription(params: {
   memberId: string;
@@ -33,18 +53,45 @@ async function upsertSubscription(params: {
   checkoutSessionId?: string | null;
 }) {
   const supabase = getSupabaseServiceRoleClient();
-  await supabase.from("subscriptions").upsert({
+  const payload: {
+    member_id: string;
+    creator_id: string;
+    stripe_subscription_id: string;
+    stripe_customer_id: string;
+    status: SubscriptionStatus;
+    price_cents: number;
+    current_period_end?: string | null;
+    stripe_checkout_session_id?: string | null;
+  } = {
     member_id: params.memberId,
     creator_id: params.creatorId,
     stripe_subscription_id: params.subscriptionId,
     stripe_customer_id: params.customerId,
     status: params.status === "active" ? "active" : params.status,
-    price_cents: params.priceCents,
-    current_period_end: params.periodEnd
-      ? new Date(params.periodEnd * 1000).toISOString()
-      : null,
-    stripe_checkout_session_id: params.checkoutSessionId ?? null
+    price_cents: params.priceCents
+  };
+
+  if (typeof params.periodEnd === "number") {
+    payload.current_period_end = new Date(params.periodEnd * 1000).toISOString();
+  }
+
+  if (typeof params.checkoutSessionId === "string") {
+    payload.stripe_checkout_session_id = params.checkoutSessionId;
+  }
+
+  const { error } = await supabase.from("subscriptions").upsert(payload, {
+    onConflict: "member_id,creator_id"
   });
+
+  if (error) {
+    logStripeEvent("subscription.upsert_failed", {
+      member_id: params.memberId,
+      creator_id: params.creatorId,
+      status: params.status,
+      message: error.message
+    });
+    throw new Error(error.message);
+  }
 }
 
 export async function POST(req: Request) {
@@ -65,6 +112,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Webhook Error: ${String(error)}` }, { status: 400 });
   }
 
+  logStripeEvent("event.received", { type: event.type, id: event.id });
+
   if (!relevantEvents.has(event.type)) {
     return NextResponse.json({ received: true });
   }
@@ -76,6 +125,13 @@ export async function POST(req: Request) {
         if (!session.subscription || !session.metadata?.member_id || !session.metadata?.creator_id) {
           break;
         }
+        logStripeEvent("checkout.session.completed", {
+          checkout_session_id: session.id,
+          subscription_id: session.subscription,
+          customer_id: session.customer,
+          member_id: session.metadata.member_id,
+          creator_id: session.metadata.creator_id
+        });
         const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
           expand: ["items.data.price"]
         });
@@ -85,7 +141,7 @@ export async function POST(req: Request) {
           subscriptionId: subscription.id,
           customerId: subscription.customer as string,
           priceCents: subscription.items.data[0]?.price?.unit_amount ?? 0,
-          status: subscription.status,
+          status: normalizeSubscriptionStatus(subscription),
           periodEnd: subscription.current_period_end,
           checkoutSessionId: session.id
         });
@@ -98,13 +154,20 @@ export async function POST(req: Request) {
         const memberId = subscription.metadata.member_id;
         const creatorId = subscription.metadata.creator_id;
         if (!memberId || !creatorId) break;
+        logStripeEvent("customer.subscription.sync", {
+          subscription_id: subscription.id,
+          customer_id: subscription.customer,
+          status: normalizeSubscriptionStatus(subscription),
+          member_id: memberId,
+          creator_id: creatorId
+        });
         await upsertSubscription({
           memberId,
           creatorId,
           subscriptionId: subscription.id,
           customerId: subscription.customer as string,
           priceCents: subscription.items.data[0]?.price?.unit_amount ?? 0,
-          status: subscription.status,
+          status: normalizeSubscriptionStatus(subscription),
           periodEnd: subscription.current_period_end
         });
         break;

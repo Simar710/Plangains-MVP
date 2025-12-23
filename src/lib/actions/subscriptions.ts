@@ -33,15 +33,18 @@ export async function startSubscriptionAction(formData: FormData) {
   if (creator.monthly_price_cents === 0) {
     await supabase
       .from("subscriptions")
-      .upsert({
-        member_id: session!.user.id,
-        creator_id: creator.id,
-        status: "free",
-        price_cents: 0,
-        stripe_subscription_id: null,
-        stripe_checkout_session_id: null,
-        stripe_customer_id: null
-      });
+      .upsert(
+        {
+          member_id: session!.user.id,
+          creator_id: creator.id,
+          status: "free",
+          price_cents: 0,
+          stripe_subscription_id: null,
+          stripe_checkout_session_id: null,
+          stripe_customer_id: null
+        },
+        { onConflict: "member_id,creator_id" }
+      );
     redirect(`/creator/${creator.slug}?subscribed=1`);
   }
 
@@ -72,6 +75,7 @@ export async function startSubscriptionAction(formData: FormData) {
         member_id: session!.user.id,
         creator_id: creator.id
       },
+      trial_period_days: 7,
       transfer_data: creator.stripe_account_id
         ? {
             destination: creator.stripe_account_id
@@ -87,13 +91,16 @@ export async function startSubscriptionAction(formData: FormData) {
 
   await supabase
     .from("subscriptions")
-    .upsert({
-      member_id: session!.user.id,
-      creator_id: creator.id,
-      status: "incomplete",
-      price_cents: creator.monthly_price_cents,
-      stripe_checkout_session_id: checkout.id
-    })
+    .upsert(
+      {
+        member_id: session!.user.id,
+        creator_id: creator.id,
+        status: "incomplete",
+        price_cents: creator.monthly_price_cents,
+        stripe_checkout_session_id: checkout.id
+      },
+      { onConflict: "member_id,creator_id" }
+    )
     .select()
     .single();
 
