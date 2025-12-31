@@ -7,11 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createStripeConnectLinkAction } from "@/lib/actions/creator";
 import { getCreatorProfile } from "@/lib/auth";
+import { getStripeClient } from "@/lib/stripe";
 import { getSupabaseServerComponentClient } from "@/lib/supabase/server";
 
-export default async function CreatorSettingsPage() {
+export default async function CreatorSettingsPage({
+  searchParams
+}: {
+  searchParams?: { stripe?: string };
+}) {
   const creator = await getCreatorProfile();
   const supabase = getSupabaseServerComponentClient();
+  let stripeStatus: "connected" | "incomplete" | "missing" = "missing";
+  if (creator?.stripe_account_id) {
+    const stripe = getStripeClient();
+    const account = await stripe.accounts.retrieve(creator.stripe_account_id);
+    const onboardingComplete = Boolean(account.details_submitted) && Boolean(account.charges_enabled);
+    stripeStatus = onboardingComplete ? "connected" : "incomplete";
+  }
 
   const { data: program } = await supabase
     .from("programs")
@@ -40,15 +52,40 @@ export default async function CreatorSettingsPage() {
   }
 
   return (
-    <div className="container space-y-6 py-10">
+    <div className="container space-y-5 py-8">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">Creator settings</p>
-          <h1 className="text-3xl font-semibold">{creator.display_name}</h1>
+          <h1 className="text-2xl font-semibold sm:text-3xl">{creator.display_name}</h1>
           <p className="text-sm text-muted-foreground">Public page: /creator/{creator.slug}</p>
         </div>
-        <Badge variant="secondary">Stripe {creator.stripe_account_id ? "connected" : "not connected"}</Badge>
+        <Badge variant="secondary">
+          Stripe {stripeStatus === "connected" ? "connected" : "not connected"}
+        </Badge>
       </div>
+
+      {searchParams?.stripe === "success" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Stripe onboarding submitted</CardTitle>
+            <CardDescription>
+              Your details were received. Stripe may take a moment to finalize your account.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
+
+      {creator.monthly_price_cents > 0 && stripeStatus !== "connected" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Complete Stripe onboarding</CardTitle>
+            <CardDescription>
+              Paid subscriptions require a connected Stripe account. Finish onboarding to accept
+              payments.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -58,7 +95,9 @@ export default async function CreatorSettingsPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <form action={createStripeConnectLinkAction}>
-              <Button type="submit">{creator.stripe_account_id ? "Update Stripe details" : "Connect Stripe"}</Button>
+              <Button type="submit" className="w-full sm:w-auto">
+                {creator.stripe_account_id ? "Update Stripe details" : "Connect Stripe"}
+              </Button>
             </form>
             <p className="text-sm text-muted-foreground">
               Standard Connect is used. Platform fee is applied via Checkout sessions.

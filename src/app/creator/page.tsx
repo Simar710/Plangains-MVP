@@ -20,21 +20,21 @@ const steps = [
 
 export default function CreatorHub() {
   return (
-    <div className="container space-y-8 py-12">
+    <div className="container space-y-6 py-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Creators</p>
-          <h1 className="text-3xl font-semibold">Earn from your training programs</h1>
-          <p className="max-w-2xl text-muted-foreground">
+          <h1 className="text-2xl font-semibold sm:text-3xl">Earn from your training programs</h1>
+          <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
             PlanGains is built for solo trainers and gym owners who want recurring revenue without
             managing a complex app. Connect Stripe, set your price, and share your public page.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Button asChild className="w-full sm:w-auto">
             <Link href="/auth/sign-up">Start free</Link>
           </Button>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/creator/become">Become a creator</Link>
           </Button>
         </div>

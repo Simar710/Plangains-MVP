@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { becomeCreatorSchema, programSchema } from "@/lib/validation/creator";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getStripeClient, siteUrl } from "@/lib/stripe";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/admin";
 
 export async function becomeCreatorAction(_: unknown, formData: FormData) {
   const parsed = becomeCreatorSchema.safeParse({
@@ -33,7 +34,9 @@ export async function becomeCreatorAction(_: unknown, formData: FormData) {
     display_name: parsed.data.displayName,
     slug: parsed.data.slug,
     bio: parsed.data.bio ?? null,
-    monthly_price_cents: Math.round(parsed.data.monthlyPrice * 100)
+    monthly_price_cents: Math.round(parsed.data.monthlyPrice * 100),
+    profile_complete: true,
+    is_active: true
   });
 
   if (error) {
@@ -124,10 +127,14 @@ export async function createProgramAction(_: unknown, formData: FormData) {
       .select("id")
       .single();
 
+    if (!dayRow) {
+      return { error: "Failed to create program day" };
+    }
+
     for (let position = 0; position < day.exercises.length; position += 1) {
       const exercise = day.exercises[position];
       await supabase.from("program_exercises").insert({
-        program_day_id: dayRow?.id,
+        program_day_id: dayRow.id,
         name: exercise.name,
         instructions: exercise.instructions ?? null,
         position
@@ -166,11 +173,19 @@ export async function createStripeConnectLinkAction(_: FormData) {
       email: session.user.email ?? undefined
     });
     accountId = account.id;
-    await supabase.from("creators").update({ stripe_account_id: accountId }).eq("id", creator.id);
+    const service = getSupabaseServiceRoleClient();
+    const { error: updateError } = await service
+      .from("creators")
+      .update({ stripe_account_id: accountId })
+      .eq("id", creator.id);
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
   }
 
   const refreshUrl = process.env.STRIPE_CONNECT_REFRESH_URL || `${siteUrl()}/creator/settings`;
-  const returnUrl = process.env.STRIPE_CONNECT_RETURN_URL || `${siteUrl()}/creator/settings`;
+  const returnUrl =
+    process.env.STRIPE_CONNECT_RETURN_URL || `${siteUrl()}/creator/settings?stripe=success`;
   const link = await stripe.accountLinks.create({
     account: accountId,
     refresh_url: refreshUrl,

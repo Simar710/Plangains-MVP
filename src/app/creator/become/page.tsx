@@ -10,8 +10,8 @@ export default async function BecomeCreatorPage() {
     <div className="container max-w-3xl space-y-6 py-10">
       <div className="space-y-2">
         <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">Creator onboarding</p>
-        <h1 className="text-3xl font-semibold">Become a creator</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-semibold sm:text-3xl">Become a creator</h1>
+        <p className="text-sm text-muted-foreground sm:text-base">
           Create your creator profile to start publishing programs and accepting subscriptions.
         </p>
       </div>

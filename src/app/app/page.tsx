@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, role")
-    .eq("id", session?.user.id)
+    .eq("id", session?.user.id ?? "")
     .single();
 
   const { data: subscription } = await supabase
@@ -24,16 +24,16 @@ export default async function DashboardPage() {
     .maybeSingle();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col gap-2">
         <p className="text-sm text-muted-foreground">Welcome back</p>
-        <h1 className="text-3xl font-semibold">
+        <h1 className="text-2xl font-semibold sm:text-3xl">
           {profile?.full_name ?? "PlanGains member"}
         </h1>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
           <Badge variant="secondary">{profile?.role ?? "member"}</Badge>
           <Link href="/app/program">My program</Link>
-          <Link href="/creator">Browse creators</Link>
+          <Link href="/creators">Browse creators</Link>
         </div>
       </div>
 
@@ -47,12 +47,12 @@ export default async function DashboardPage() {
             {subscription ? (
               <>
                 <p className="text-sm text-muted-foreground">Creator</p>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-lg font-semibold">{subscription.creators?.display_name}</p>
                     <p className="text-sm text-muted-foreground capitalize">{subscription.status}</p>
                   </div>
-                  <Button asChild variant="secondary">
+                  <Button asChild variant="secondary" className="w-full sm:w-auto">
                     <Link href={`/creator/${subscription.creators?.slug}`}>View creator</Link>
                   </Button>
                 </div>
@@ -64,7 +64,7 @@ export default async function DashboardPage() {
               <div className="space-y-2">
                 <p className="text-muted-foreground">No subscriptions yet.</p>
                 <Button asChild>
-                  <Link href="/creator">Find a creator</Link>
+                  <Link href="/creators">Find a creator</Link>
                 </Button>
               </div>
             )}

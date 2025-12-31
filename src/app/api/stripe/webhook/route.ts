@@ -1,16 +1,28 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/admin";
 import { getStripeClient } from "@/lib/stripe";
 
+export const runtime = "nodejs";
+
 const relevantEvents = new Set([
   "checkout.session.completed",
   "customer.subscription.created",
   "customer.subscription.updated",
-  "customer.subscription.deleted"
+  "customer.subscription.deleted",
+  "account.updated"
 ]);
+
+type SubscriptionStatus =
+  | "trialing"
+  | "active"
+  | "incomplete"
+  | "incomplete_expired"
+  | "past_due"
+  | "canceled"
+  | "unpaid"
+  | "paused";
 
 function stripeDebugEnabled() {
   return process.env.DEBUG_STRIPE === "true";
@@ -25,15 +37,15 @@ function logStripeEvent(message: string, payload?: Record<string, unknown>) {
   }
 }
 
-type SubscriptionStatus =
-  | "trialing"
-  | "active"
-  | "incomplete"
-  | "incomplete_expired"
-  | "past_due"
-  | "canceled"
-  | "unpaid"
-  | "paused";
+function isOnboardingComplete(account: Stripe.Account): boolean {
+  const currentlyDue = account.requirements?.currently_due ?? [];
+  return (
+    Boolean(account.details_submitted) &&
+    Boolean(account.charges_enabled) &&
+    Boolean(account.payouts_enabled) &&
+    currentlyDue.length === 0
+  );
+}
 
 function normalizeSubscriptionStatus(subscription: Stripe.Subscription): SubscriptionStatus {
   if (subscription.pause_collection) {
@@ -96,10 +108,14 @@ async function upsertSubscription(params: {
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const signature = headers().get("stripe-signature");
+  const signature = req.headers.get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  if (!signature || !webhookSecret) {
+  if (!signature) {
+    return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
+  }
+
+  if (!webhookSecret) {
     return NextResponse.json({ error: "Webhook not configured" }, { status: 400 });
   }
 
@@ -108,6 +124,7 @@ export async function POST(req: Request) {
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    logStripeEvent("webhook.verified", { id: event.id, type: event.type });
   } catch (error) {
     return NextResponse.json({ error: `Webhook Error: ${String(error)}` }, { status: 400 });
   }
@@ -115,6 +132,7 @@ export async function POST(req: Request) {
   logStripeEvent("event.received", { type: event.type, id: event.id });
 
   if (!relevantEvents.has(event.type)) {
+    logStripeEvent("event.ignored", { type: event.type, id: event.id });
     return NextResponse.json({ received: true });
   }
 
@@ -170,6 +188,32 @@ export async function POST(req: Request) {
           status: normalizeSubscriptionStatus(subscription),
           periodEnd: subscription.current_period_end
         });
+        break;
+      }
+      case "account.updated": {
+        const account = event.data.object as Stripe.Account;
+        const currentlyDue = account.requirements?.currently_due ?? [];
+        logStripeEvent("account.updated", {
+          account_id: account.id,
+          details_submitted: account.details_submitted,
+          charges_enabled: account.charges_enabled,
+          payouts_enabled: account.payouts_enabled,
+          currently_due: currentlyDue.length
+        });
+
+        const onboardingComplete = isOnboardingComplete(account);
+        const supabase = getSupabaseServiceRoleClient();
+        const { error } = await supabase
+          .from("creators")
+          .update({ stripe_onboarding_complete: onboardingComplete })
+          .eq("stripe_account_id", account.id);
+        if (error) {
+          logStripeEvent("account.updated_failed", {
+            account_id: account.id,
+            message: error.message
+          });
+          throw new Error(error.message);
+        }
         break;
       }
       default:

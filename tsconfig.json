@@ -28,6 +28,9 @@
       ],
       "@/db/*": [
         "src/db/*"
+      ],
+      "@/types/*": [
+        "src/types/*"
       ]
     },
     "types": [

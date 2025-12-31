@@ -14,9 +14,11 @@
 
 ## 3) Start webhook forwarding
 - In a new terminal:
-  - `stripe listen --forward-to localhost:3000/api/stripe/webhook`
+  - `stripe listen --forward-to http://localhost:3000/api/stripe/webhook --forward-connect-to http://localhost:3000/api/stripe/webhook`
 - Copy the webhook signing secret printed by the CLI into `.env.local`:
   - `STRIPE_WEBHOOK_SECRET=whsec_...`
+  - Do not use the Dashboard endpoint secret for CLI-forwarded events.
+  - Ensure Stripe CLI is logged into the same Stripe account/sandbox as your API keys.
 
 ## 4) Enable debug logging (optional)
 - Set `DEBUG_STRIPE=true` in `.env.local`
@@ -39,6 +41,15 @@ These events must arrive for status sync to be correct:
 - `customer.subscription.created`
 - `customer.subscription.updated`
 - `customer.subscription.deleted`
+- `account.updated` (Stripe Connect onboarding status)
+
+### Connect onboarding status (source of truth)
+The app updates `creators.stripe_onboarding_complete` only from the webhook.
+It is set to true when Stripe sends `account.updated` with:
+- `details_submitted = true`
+- `charges_enabled = true`
+- `payouts_enabled = true`
+- `requirements.currently_due` is empty
 
 ## 6a) Testing specific subscription statuses
 Use the Stripe Dashboard (test mode) or the CLI to force status changes and verify DB updates.

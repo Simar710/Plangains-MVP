@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { startSubscriptionAction } from "@/lib/actions/subscriptions";
+import { getSession } from "@/lib/auth";
+import { cancelSubscriptionAction, startSubscriptionAction } from "@/lib/actions/subscriptions";
 import { getSupabaseServerComponentClient } from "@/lib/supabase/server";
 
 export default async function CreatorPublicPage({ params }: { params: { slug: string } }) {
@@ -28,13 +29,24 @@ export default async function CreatorPublicPage({ params }: { params: { slug: st
     creator.monthly_price_cents === 0
       ? "Free"
       : `$${(creator.monthly_price_cents / 100).toFixed(0)}/month`;
+  const session = await getSession();
+  const allowedStatuses = new Set(["active", "trialing", "free"]);
+  const { data: subscription } = session
+    ? await supabase
+        .from("subscriptions")
+        .select("status")
+        .eq("member_id", session.user.id)
+        .eq("creator_id", creator.id)
+        .maybeSingle()
+    : { data: null };
+  const isSubscribed = Boolean(subscription && allowedStatuses.has(subscription.status));
 
   return (
-    <div className="container max-w-4xl space-y-6 py-10">
+    <div className="container max-w-4xl space-y-5 py-8">
       <div className="flex flex-col gap-2">
         <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">Creator</p>
-        <h1 className="text-4xl font-semibold">{creator.display_name}</h1>
-        <p className="text-muted-foreground">{creator.bio}</p>
+        <h1 className="text-2xl font-semibold sm:text-3xl">{creator.display_name}</h1>
+        <p className="text-sm text-muted-foreground sm:text-base">{creator.bio}</p>
       </div>
 
       <Card>
@@ -44,18 +56,30 @@ export default async function CreatorPublicPage({ params }: { params: { slug: st
         </CardHeader>
         <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-2xl font-semibold">{priceLabel}</p>
+            <p className="text-xl font-semibold">{priceLabel}</p>
             <p className="text-sm text-muted-foreground">Cancel anytime</p>
           </div>
-          <form action={startSubscriptionAction} className="w-full max-w-sm space-y-2 md:w-auto">
-            <input type="hidden" name="creatorId" value={creator.id} />
-            <Button type="submit" className="w-full">
-              {creator.monthly_price_cents === 0 ? "Join for free" : "Subscribe"}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Stripe webhooks manage paid subscription status.
-            </p>
-          </form>
+          {isSubscribed ? (
+            <form action={cancelSubscriptionAction} className="w-full max-w-sm space-y-2 md:w-auto">
+              <input type="hidden" name="creatorId" value={creator.id} />
+              <Button type="submit" className="w-full" variant="outline">
+                Unsubscribe
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Stripe webhooks manage paid subscription status.
+              </p>
+            </form>
+          ) : (
+            <form action={startSubscriptionAction} className="w-full max-w-sm space-y-2 md:w-auto">
+              <input type="hidden" name="creatorId" value={creator.id} />
+              <Button type="submit" className="w-full">
+                {creator.monthly_price_cents === 0 ? "Join for free" : "Subscribe"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Stripe webhooks manage paid subscription status.
+              </p>
+            </form>
+          )}
         </CardContent>
       </Card>
 

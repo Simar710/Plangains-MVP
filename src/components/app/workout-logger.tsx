@@ -12,14 +12,14 @@ export function WorkoutLogger({ subscriptionId, programDayId }: { subscriptionId
   const [state, formAction] = useFormState(logWorkoutAction, { error: "" });
 
   return (
-    <form action={formAction} className="space-y-3 rounded-lg border border-border/60 bg-secondary/30 p-4">
+    <form action={formAction} className="space-y-2 rounded-lg border border-border/60 bg-secondary/30 p-3">
       <input type="hidden" name="subscriptionId" value={subscriptionId} />
       <input type="hidden" name="programDayId" value={programDayId ?? ""} />
       <div className="space-y-1">
         <Label htmlFor="exerciseName">Exercise</Label>
         <Input id="exerciseName" name="exerciseName" placeholder="Bench Press" required />
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid gap-2 sm:grid-cols-3">
         <div className="space-y-1">
           <Label htmlFor="weight">Weight (optional)</Label>
           <Input id="weight" name="weight" type="number" step="0.5" placeholder="100" />

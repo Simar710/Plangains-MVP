@@ -18,6 +18,9 @@ export type Creator = {
   monthly_price_cents: number;
   stripe_account_id: string | null;
   stripe_onboarding_complete: boolean;
+  is_active: boolean;
+  profile_complete: boolean;
+  avatar_url: string | null;
   created_at: string;
 };
 
@@ -74,18 +77,3 @@ export type WorkoutSet = {
   rpe: number | null;
   notes: string | null;
 };
-
-export interface Database {
-  public: {
-    Tables: {
-      profiles: { Row: Profile };
-      creators: { Row: Creator };
-      subscriptions: { Row: Subscription };
-      programs: { Row: Program };
-      program_days: { Row: ProgramDay };
-      program_exercises: { Row: ProgramExercise };
-      workouts: { Row: Workout };
-      workout_sets: { Row: WorkoutSet };
-    };
-  };
-}

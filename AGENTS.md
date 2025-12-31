@@ -26,3 +26,11 @@ Scope: Applies to entire repo.
 5. Stripe integration (Connect + Checkout + webhook)
 6. Programs + workout logging basics
 7. Polish, docs, and sanity checks
+
+## Mobile-First UI Rules (Web MVP)
+- Default layout targets mobile width first (320–430px). Desktop is responsive enhancement, not a separate design.
+- Use single-column layouts by default; add multi-column only at `md:` or higher.
+- Avoid tables for core flows (program view, logging). Use card/stack layouts.
+- Navigation: mobile-first header or bottom nav patterns; keep tap targets ≥ 44px.
+- Forms: stacked fields, large inputs, clear errors; no cramped inline layouts on mobile.
+- Always test pages at 375x812 and 390x844 in devtools before considering a UI “done”.

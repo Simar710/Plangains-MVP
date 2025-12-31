@@ -106,3 +106,59 @@ export async function startSubscriptionAction(formData: FormData) {
 
   redirect(checkout.url ?? `/creator/${creator.slug}`);
 }
+
+export async function cancelSubscriptionAction(formData: FormData) {
+  const creatorId = formData.get("creatorId")?.toString();
+  if (!creatorId) {
+    redirect("/creator");
+  }
+
+  const supabase = getSupabaseServerClient();
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    redirect("/auth/sign-in");
+  }
+
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("id, status, stripe_subscription_id")
+    .eq("member_id", session.user.id)
+    .eq("creator_id", creatorId)
+    .maybeSingle();
+
+  const { data: creator } = await supabase
+    .from("creators")
+    .select("slug")
+    .eq("id", creatorId)
+    .maybeSingle();
+  const creatorSlug = creator?.slug ?? undefined;
+
+  if (!subscription) {
+    redirect(creatorSlug ? `/creator/${creatorSlug}` : "/creators");
+  }
+
+  let periodEnd: string | null = null;
+  if (subscription.stripe_subscription_id) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      redirect(creatorSlug ? `/creator/${creatorSlug}?error=stripe_not_configured` : "/creators");
+    }
+    const stripe = getStripeClient();
+    const canceled = await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
+    if (typeof canceled.current_period_end === "number") {
+      periodEnd = new Date(canceled.current_period_end * 1000).toISOString();
+    }
+  }
+
+  await supabase
+    .from("subscriptions")
+    .update({
+      status: "canceled",
+      current_period_end: periodEnd
+    })
+    .eq("id", subscription.id);
+
+  redirect(creatorSlug ? `/creator/${creatorSlug}?unsubscribed=1` : "/creators");
+}

@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function SignInPage() {
   return (
-    <div className="flex min-h-[70vh] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-[60vh] items-center justify-center px-4 py-8">
+      <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Welcome back</CardTitle>
           <CardDescription>Sign in to access your dashboard.</CardDescription>

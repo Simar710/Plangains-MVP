@@ -11,6 +11,7 @@
 - ✅ Member dashboard gated (/app)
 - ✅ Member program page gated (/app/program)
 - ✅ Creator hub (/creator)
+- ✅ Creator directory (/creators)
 - ✅ Creator onboarding gated (/creator/become)
 - ✅ Creator settings gated (/creator/settings)
 - ✅ Public creator page (/creator/[slug])
@@ -44,6 +45,10 @@
 - ✅ Create Connect onboarding link
 - ✅ Create Checkout subscription session
 - ✅ Webhook route with signature verification
+
+## Growth/Ops
+- ✅ Creator directory with search + sort + setup status
+- ✅ Admin console metrics + creator activation toggle
 
 ## Notes
 - 🟡 Supabase typing currently loosened to `any` (generate types later)

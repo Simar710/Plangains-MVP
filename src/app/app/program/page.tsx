@@ -24,7 +24,7 @@ export default async function ProgramPage() {
   if (!subscription) {
     return (
       <div className="space-y-4">
-        <h1 className="text-3xl font-semibold">My program</h1>
+        <h1 className="text-2xl font-semibold sm:text-3xl">My program</h1>
         <Card>
           <CardHeader>
             <CardTitle>No program yet</CardTitle>
@@ -32,7 +32,7 @@ export default async function ProgramPage() {
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <Link href="/creator">Find a creator</Link>
+              <Link href="/creators">Find a creator</Link>
             </Button>
           </CardContent>
         </Card>
@@ -43,7 +43,7 @@ export default async function ProgramPage() {
   if (!allowedStatuses.has(subscription.status)) {
     return (
       <div className="space-y-4">
-        <h1 className="text-3xl font-semibold">My program</h1>
+        <h1 className="text-2xl font-semibold sm:text-3xl">My program</h1>
         <Card>
           <CardHeader>
             <CardTitle>Subscription inactive</CardTitle>
@@ -53,7 +53,7 @@ export default async function ProgramPage() {
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <Link href="/creator">Browse creators</Link>
+              <Link href="/creators">Browse creators</Link>
             </Button>
           </CardContent>
         </Card>
@@ -77,11 +77,11 @@ export default async function ProgramPage() {
     : subscription?.creators) as { display_name?: string; slug?: string } | null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-muted-foreground">Subscribed to</p>
-        <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-semibold">{creator?.display_name}</h1>
+        <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Subscribed to</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <h1 className="text-2xl font-semibold sm:text-3xl">{creator?.display_name}</h1>
           <Badge variant="secondary" className="capitalize">
             {subscription.status}
           </Badge>
@@ -102,7 +102,7 @@ export default async function ProgramPage() {
           <CardContent className="space-y-3">
             {program?.program_days?.map((day) => (
               <div key={day.id} className="rounded-lg border border-border/60 bg-background/60 p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Day {day.day_number}</p>
                     <p className="text-base font-semibold">{day.title ?? `Day ${day.day_number}`}</p>
@@ -111,7 +111,7 @@ export default async function ProgramPage() {
                 </div>
                 <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                   {day.program_exercises?.map((exercise) => (
-                    <li key={exercise.id} className="flex items-start justify-between gap-4">
+                    <li key={exercise.id} className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                       <span>{exercise.name}</span>
                       {exercise.instructions ? <span className="text-xs">{exercise.instructions}</span> : null}
                     </li>
